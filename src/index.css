@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@layer base {
+  @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+  
+  body { 
+    background-color: #0d0d0d; 
+    color: #ff9800;
+    font-family: 'VT323', monospace; 
+    image-rendering: pixelated;
+    margin: 0;
+  }
+}
+
+/* OSRS Stone Panel Styling */
+.rs-stone {
+  background: #2a2418; /* Classic RS Brown */
+  border: 4px solid #3d3d3d;
+  box-shadow: inset 2px 2px 0px #5d5d5d, inset -2px -2px 0px #1a1a1a, 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.rs-inner-panel {
+  background: #1a1a1a;
+  border: 2px solid #3d3d3d;
+}
+
+/* Typography */
+.font-osrs {
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Animations for the Popup */
+@keyframes rs-popup-slide {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes gold-shine {
+  0% { left: -150%; }
+  100% { left: 150%; }
+}
+
+.animate-rs-popup {
+  animation: rs-popup-slide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.rs-shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.rs-shine-effect::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  transform: skewX(-45deg);
+  animation: gold-shine 2s infinite;
+}
