@@ -2,11 +2,16 @@ import React, { useState } from 'react';
 import { useDiary } from './hooks/useDiary';
 import OverallTab from './components/OverallTab';
 import WeeklyTab from './components/WeeklyTab';
+import QuestsTab from './components/QuestsTab';
 import CollectionPopup from './components/CollectionPopup'; // New Import
-import { Download, Upload, Trash2, LayoutDashboard, Calendar, Plus, Trophy } from 'lucide-react';
+import { Download, Upload, Trash2, LayoutDashboard, Calendar, Plus, Trophy, Scroll } from 'lucide-react';
 
 export default function App() {
-  const { db, setDb, currentWeek, stats, deleteTask } = useDiary();
+  const {
+    db, setDb, currentWeek, stats,
+    deleteTask, deleteRegion,
+    addQuest, addQuestTask, toggleQuestTask, deleteQuest
+  } = useDiary();
   const [activeTab, setActiveTab] = useState('overall');
   const [popupText, setPopupText] = useState(null); // Just store the string
 
@@ -34,19 +39,37 @@ export default function App() {
           <button onClick={() => setActiveTab('weekly')} className={`flex-1 p-4 flex justify-center gap-2 ${activeTab === 'weekly' ? 'bg-[#1a1a1a] text-[#00ff00]' : ''}`}>
             <Calendar size={20} /> WEEKLY
           </button>
+          <button onClick={() => setActiveTab('quests')} className={`p-3 ${activeTab === 'quests' ? 'bg-[#1a1a1a] text-[#ffb74d]' : ''}`}>
+            <Scroll size={20} />
+          </button>
           <button onClick={addRegion} className="p-4 border-l border-[#111] hover:text-white"><Plus /></button>
         </div>
 
         <div className="p-3 max-h-[80vh] overflow-y-auto">
-          {activeTab === 'overall' ? (
-            <OverallTab stats={stats} />
-          ) : (
+          {/* OVERALL TAB */}
+          {activeTab === 'overall' && (
+            <OverallTab stats={stats} deleteRegion={deleteRegion} />
+          )}
+
+          {/* WEEKLY TAB */}
+          {activeTab === 'weekly' && (
             <WeeklyTab
               db={db}
               setDb={setDb}
               currentWeek={currentWeek}
               triggerPopup={(txt) => setPopupText(txt)}
-              deleteTask={deleteTask} // 2. Pass it down here!
+              deleteTask={deleteTask}
+            />
+          )}
+
+          {/* QUESTS TAB */}
+          {activeTab === 'quests' && (
+            <QuestsTab
+              quests={db.quests}
+              addQuest={addQuest}
+              addQuestTask={addQuestTask}
+              toggleQuestTask={toggleQuestTask}
+              deleteQuest={deleteQuest} // Added this just in case!
             />
           )}
         </div>

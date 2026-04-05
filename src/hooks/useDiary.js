@@ -3,7 +3,14 @@ import { useState, useEffect, useMemo } from 'react';
 export const useDiary = () => {
     const [db, setDb] = useState(() => {
         const saved = localStorage.getItem('osrs_life_v9');
-        return saved ? JSON.parse(saved) : { regions: [], history: {}, bossCompletions: {} };
+        const parsed = saved ? JSON.parse(saved) : { regions: [], history: {}, bossCompletions: {} };
+
+        return {
+            regions: parsed.regions || [],
+            history: parsed.history || {},
+            bossCompletions: parsed.bossCompletions || {},
+            quests: parsed.quests || []
+        };
     });
 
     useEffect(() => { localStorage.setItem('osrs_life_v9', JSON.stringify(db)); }, [db]);
@@ -43,10 +50,65 @@ export const useDiary = () => {
         });
     }, [db, currentWeek]);
 
-    // Add this inside your useDiary return object in useDiary.js
-    const deleteRegion = (id) => {
-        if (window.confirm("Delete this entire region?")) {
-            setDb(prev => ({ ...prev, regions: prev.regions.filter(r => r.id !== id) }));
+    const addQuest = (name) => {
+        setDb(prev => ({
+            ...prev,
+            quests: [...prev.quests, { id: Date.now(), name, tasks: [], completed: false }]
+        }));
+    };
+
+    const addQuestTask = (questId, taskText) => {
+        setDb(prev => {
+            const next = JSON.parse(JSON.stringify(prev));
+            const quest = next.quests.find(q => q.id === questId);
+            quest.tasks.push({ text: taskText, done: false });
+            return next;
+        });
+    };
+
+    const toggleQuestTask = (questId, taskIdx) => {
+        setDb(prev => {
+            const next = JSON.parse(JSON.stringify(prev));
+            const quest = next.quests.find(q => q.id === questId);
+            const task = quest.tasks[taskIdx];
+
+            task.done = !task.done;
+
+            // Check if ALL tasks are now done
+            const allDone = quest.tasks.every(t => t.done);
+            if (allDone && !quest.completed) {
+                quest.completed = true;
+                triggerPopup(`QUEST COMPLETE: ${quest.name}`);
+            } else if (!allDone) {
+                quest.completed = false;
+            }
+
+            return next;
+        });
+    };
+
+    const deleteRegion = (regId) => {
+        if (window.confirm("Danger: This will delete the entire region and all historical progress. Proceed?")) {
+            setDb(prev => {
+                const next = JSON.parse(JSON.stringify(prev));
+
+                // 1. Remove the region template
+                next.regions = next.regions.filter(r => r.id !== regId);
+
+                // 2. Wipe history for this specific ID across all stored weeks
+                Object.keys(next.history).forEach(weekKey => {
+                    if (next.history[weekKey][regId]) {
+                        delete next.history[weekKey][regId];
+                    }
+                });
+
+                // 3. Wipe boss completion records
+                if (next.bossCompletions[regId]) {
+                    delete next.bossCompletions[regId];
+                }
+
+                return next;
+            });
         }
     };
 
@@ -65,5 +127,5 @@ export const useDiary = () => {
         });
     };
 
-    return { db, setDb, currentWeek, stats, deleteTask };
+    return { db, setDb, currentWeek, stats, deleteTask, deleteRegion };
 };
