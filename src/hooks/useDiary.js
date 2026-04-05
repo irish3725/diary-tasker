@@ -22,6 +22,10 @@ export const useDiary = () => {
         return `${d.getFullYear()}-W${Math.ceil((((d - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
     }, []);
 
+    const questPoints = useMemo(() => {
+        return (db.quests || []).reduce((acc, q) => acc + (q.tasks?.filter(t => t.done).length || 0), 0);
+    }, [db.quests]);
+
     // Centralized "Smart" Calculator
     const stats = useMemo(() => {
         const historyKeys = Object.keys(db.history).sort().reverse();
@@ -48,6 +52,7 @@ export const useDiary = () => {
                 elite: (bDone / (reg.elite.length || 1)) * 100
             };
         });
+
     }, [db, currentWeek]);
 
     const addQuest = (name) => {
@@ -66,19 +71,22 @@ export const useDiary = () => {
         });
     };
 
-    const toggleQuestTask = (questId, taskIdx) => {
+    const toggleQuestTask = (questId, taskIdx, triggerPopup) => { // 1. Pass triggerPopup as an arg
         setDb(prev => {
             const next = JSON.parse(JSON.stringify(prev));
             const quest = next.quests.find(q => q.id === questId);
-            const task = quest.tasks[taskIdx];
+            if (!quest) return prev;
 
+            const task = quest.tasks[taskIdx];
             task.done = !task.done;
 
             // Check if ALL tasks are now done
-            const allDone = quest.tasks.every(t => t.done);
+            const allDone = quest.tasks.length > 0 && quest.tasks.every(t => t.done);
+
             if (allDone && !quest.completed) {
                 quest.completed = true;
-                triggerPopup(`QUEST COMPLETE: ${quest.name}`);
+                // 2. Safety check: only call if it exists
+                if (triggerPopup) triggerPopup(`QUEST COMPLETE: ${quest.name}`);
             } else if (!allDone) {
                 quest.completed = false;
             }
@@ -114,18 +122,64 @@ export const useDiary = () => {
 
     const deleteTask = (regId, type, index) => {
         setDb(prev => {
+            // 1. Create a deep copy to avoid React state mutation bugs
             const next = JSON.parse(JSON.stringify(prev));
-            const reg = next.regions.find(r => r.id === regId);
-            reg[type].splice(index, 1);
 
-            // Also clean up history for this week so indices stay aligned
-            if (next.history[currentWeek]?.[regId]) {
-                if (type === 'daily') next.history[currentWeek][regId].daily.splice(index, 1);
-                if (type === 'weekly') next.history[currentWeek][regId].weekly.splice(index, 1);
+            // 2. Remove from the "Master Template" (The Regions Tab)
+            const reg = next.regions.find(r => r.id === regId);
+            if (reg && reg[type]) {
+                reg[type].splice(index, 1);
             }
+
+            // 3. Remove from the "Current Week" (The Weekly Tab)
+            // We use optional chaining (?.) to ensure we don't crash if the week doesn't exist yet
+            const currentWeekHistory = next.history[currentWeek]?.[regId];
+
+            if (currentWeekHistory && currentWeekHistory[type]) {
+                currentWeekHistory[type].splice(index, 1);
+            }
+
             return next;
         });
     };
 
-    return { db, setDb, currentWeek, stats, deleteTask, deleteRegion };
+    const deleteQuest = (questId) => {
+        if (window.confirm("Delete this quest?")) {
+            setDb(prev => ({
+                ...prev,
+                quests: prev.quests.filter(q => q.id !== questId)
+            }));
+        }
+    };
+
+    const questStats = useMemo(() => {
+        const quests = db.quests || [];
+
+        const current = quests.reduce((acc, q) =>
+            acc + (q.tasks?.filter(t => t.done).length || 0), 0
+        );
+
+        const total = quests.reduce((acc, q) =>
+            acc + (q.tasks?.length || 0), 0
+        );
+
+        return { current, total };
+    }, [db.quests]);
+
+
+    return {
+        db,
+        setDb,
+        currentWeek,
+        stats,
+        deleteTask,
+        deleteRegion,
+        addQuest,
+        addQuestTask,
+        toggleQuestTask,
+        deleteQuest,
+        questPoints,
+        questPoints: questStats.current,
+        totalPossiblePoints: questStats.total
+    };
 };

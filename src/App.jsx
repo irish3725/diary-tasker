@@ -9,8 +9,9 @@ import { Download, Upload, Trash2, LayoutDashboard, Calendar, Plus, Trophy, Scro
 export default function App() {
   const {
     db, setDb, currentWeek, stats,
-    deleteTask, deleteRegion,
-    addQuest, addQuestTask, toggleQuestTask, deleteQuest
+    questPoints, deleteTask, deleteRegion,
+    addQuest, addQuestTask, toggleQuestTask,
+    deleteQuest, totalPossiblePoints
   } = useDiary();
   const [activeTab, setActiveTab] = useState('overall');
   const [popupText, setPopupText] = useState(null); // Just store the string
@@ -48,7 +49,13 @@ export default function App() {
         <div className="p-3 max-h-[80vh] overflow-y-auto">
           {/* OVERALL TAB */}
           {activeTab === 'overall' && (
-            <OverallTab stats={stats} deleteRegion={deleteRegion} />
+            <OverallTab
+              stats={stats}
+              deleteRegion={deleteRegion}
+              questPoints={questPoints}
+              totalPossiblePoints={totalPossiblePoints}
+              totalQuests={db.quests.length}
+            />
           )}
 
           {/* WEEKLY TAB */}
@@ -69,7 +76,10 @@ export default function App() {
               addQuest={addQuest}
               addQuestTask={addQuestTask}
               toggleQuestTask={toggleQuestTask}
-              deleteQuest={deleteQuest} // Added this just in case!
+              deleteQuest={deleteQuest}
+              triggerPopup={(txt) => setPopupText(txt)}
+              questPoints={questPoints} // <--- Pass this
+              totalPossiblePoints={totalPossiblePoints} // <--- Pass this
             />
           )}
         </div>

@@ -135,6 +135,17 @@ export default function WeeklyTab({ db, setDb, currentWeek, triggerPopup, delete
                                     </button>
                                 ))}
                             </div>
+
+                            {/* THE TRASH CAN */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteTask(reg.id, 'daily', tIdx);
+                                }}
+                                className="opacity-100 group-hover:opacity-100 text-[#a51c1c] hover:text-red-500 p-1 transition-all"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     ))}
 
