@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from './supabaseClient';
 import { useDiary } from './hooks/useDiary';
 import OverallTab from './components/OverallTab';
 import WeeklyTab from './components/WeeklyTab';
@@ -11,11 +12,22 @@ export default function App() {
     db, setDb, currentWeek, stats,
     questPoints, deleteTask, deleteRegion,
     addQuest, addQuestTask, toggleQuestTask,
-    deleteQuest, totalPossiblePoints
+    deleteQuest, totalPossiblePoints,
+    loading, userId
   } = useDiary();
+
   const [activeTab, setActiveTab] = useState('overall');
   const [popupText, setPopupText] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+
+  const handleLogin = async () => {
+    await supabase.auth.signInWithOAuth({ provider: 'google' });
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  };
 
   const addRegion = () => {
     const name = prompt("New Region Name:");
@@ -50,6 +62,26 @@ export default function App() {
     // Reset the input so the same file can be re-imported if needed
     event.target.value = '';
   };
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#ff9800] font-osrs text-2xl">
+      Loading...
+    </div>
+  );
+
+  if (!userId) return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="rs-stone p-8 flex flex-col items-center gap-6 border-4 border-[#3d3d3d]">
+        <h1 className="text-[#ff9800] font-osrs text-3xl tracking-widest uppercase">Diary Tasker</h1>
+        <button
+          onClick={handleLogin}
+          className="border-2 border-[#ff9800] text-[#ff9800] font-osrs px-6 py-3 text-xl hover:bg-[#ff9800] hover:text-black transition-colors uppercase tracking-widest"
+        >
+          Login with Google
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen p-4 text-[#ff9800] font-osrs bg-[#0a0a0a]">
@@ -104,6 +136,12 @@ export default function App() {
                   <Upload size={14} /> Import
                   <input type="file" className="hidden" onChange={(e) => { importData(e); setShowMenu(false); }} accept=".json" />
                 </label>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#3d3d3d] hover:text-white"
+                >
+                  Logout
+                </button>
               </div>
             )}
           </div>

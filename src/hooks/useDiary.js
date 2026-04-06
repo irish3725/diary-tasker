@@ -1,19 +1,39 @@
 import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../supabaseClient';
 
 export const useDiary = () => {
-    const [db, setDb] = useState(() => {
-        const saved = localStorage.getItem('osrs_life_v9');
-        const parsed = saved ? JSON.parse(saved) : { regions: [], history: {}, bossCompletions: {} };
+    const [db, setDb] = useState({ regions: [], history: {}, bossCompletions: {}, quests: [] });
+    const [userId, setUserId] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-        return {
-            regions: parsed.regions || [],
-            history: parsed.history || {},
-            bossCompletions: parsed.bossCompletions || {},
-            quests: parsed.quests || []
+    // Load session and data on mount
+    useEffect(() => {
+        const init = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                setUserId(session.user.id);
+                const { data } = await supabase
+                    .from('diary_data')
+                    .select('data')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+                if (data) setDb(data.data);
+            }
+            setLoading(false);
         };
-    });
+        init();
 
-    useEffect(() => { localStorage.setItem('osrs_life_v9', JSON.stringify(db)); }, [db]);
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUserId(session?.user?.id || null);
+        });
+        return () => listener.subscription.unsubscribe();
+    }, []);
+
+    // Save to Supabase whenever db changes
+    useEffect(() => {
+        if (!userId) return;
+        supabase.from('diary_data').upsert({ user_id: userId, data: db });
+    }, [db, userId]);
 
     const currentWeek = useMemo(() => {
         const d = new Date();
@@ -179,6 +199,7 @@ export const useDiary = () => {
         toggleQuestTask,
         deleteQuest,
         questPoints: questStats.current,
-        totalPossiblePoints: questStats.total
+        totalPossiblePoints: questStats.total,
+        loading, userId
     };
 };
