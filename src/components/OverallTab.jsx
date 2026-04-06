@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 
-export default function OverallTab({ stats, deleteRegion, questPoints, totalQuests, totalPossiblePoints }) { // 1. Added deleteRegion here
+export default function OverallTab({ stats, deleteRegion, questPoints, totalQuests, totalPossiblePoints, addRegion }) { // 1. Added deleteRegion here
   const [expanded, setExpanded] = useState(null);
   const questPercent = totalPossiblePoints > 0
     ? (questPoints / totalPossiblePoints) * 100
@@ -24,8 +24,8 @@ export default function OverallTab({ stats, deleteRegion, questPoints, totalQues
       <div className="h-2 bg-black border border-[#3d3d3d] p-[1px]">
         <div
           className={`h-full transition-all duration-1000 ${isFullyComplete
-              ? 'bg-[#00ff00] shadow-[0_0_10px_#00ff00]' // Green Glow
-              : 'bg-[#ffff00] shadow-[0_0_8px_#ffff00]'   // Yellow Glow
+            ? 'bg-[#00ff00] shadow-[0_0_10px_#00ff00]' // Green Glow
+            : 'bg-[#ffff00] shadow-[0_0_8px_#ffff00]'   // Yellow Glow
             }`}
           style={{ width: `${questPercent}%` }}
         />
@@ -89,6 +89,12 @@ export default function OverallTab({ stats, deleteRegion, questPoints, totalQues
         )}
       </div>
     ))}
+    <button
+      onClick={addRegion}
+      className="w-full border-2 border-dashed border-[#3d3d3d] p-3 text-[#5d5d5d] hover:text-[#ff9800] hover:border-[#ff9800] transition-colors flex items-center justify-center gap-2 uppercase font-bold text-xs"
+    >
+      <Plus size={16} /> Add Region
+    </button>
   </div>
   );
 }

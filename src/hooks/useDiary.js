@@ -178,7 +178,6 @@ export const useDiary = () => {
         addQuestTask,
         toggleQuestTask,
         deleteQuest,
-        questPoints,
         questPoints: questStats.current,
         totalPossiblePoints: questStats.total
     };
