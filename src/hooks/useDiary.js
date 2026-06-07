@@ -5,6 +5,7 @@ export const useDiary = () => {
     const [db, setDb] = useState({ regions: [], history: {}, bossCompletions: {}, quests: [] });
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Load session and data on mount
     useEffect(() => {
@@ -18,7 +19,9 @@ export const useDiary = () => {
                     .eq('user_id', session.user.id)
                     .maybeSingle();
                 if (data) setDb(data.data);
+                setIsLoaded(true);
             }
+            if (!session) setIsLoaded(true);
             setLoading(false);
         };
         init();
@@ -31,16 +34,9 @@ export const useDiary = () => {
 
     // Save to Supabase whenever db changes
     useEffect(() => {
-        if (!userId) return;
-        const save = async () => {
-            const { error } = await supabase
-                .from('diary_data')
-                .upsert({ user_id: userId, data: db });
-            if (error) console.error('Supabase save error:', error);
-            else console.log('Saved successfully, userId:', userId);
-        };
-        save();
-    }, [db, userId]);
+        if (!userId || !isLoaded) return;
+        supabase.from('diary_data').upsert({ user_id: userId, data: db });
+    }, [db, userId, isLoaded]);
 
     const currentWeek = useMemo(() => {
         const d = new Date();
