@@ -32,7 +32,14 @@ export const useDiary = () => {
     // Save to Supabase whenever db changes
     useEffect(() => {
         if (!userId) return;
-        supabase.from('diary_data').upsert({ user_id: userId, data: db });
+        const save = async () => {
+            const { error } = await supabase
+                .from('diary_data')
+                .upsert({ user_id: userId, data: db });
+            if (error) console.error('Supabase save error:', error);
+            else console.log('Saved successfully, userId:', userId);
+        };
+        save();
     }, [db, userId]);
 
     const currentWeek = useMemo(() => {
